@@ -4,8 +4,11 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+
 app.use(cors());
-app.use(express.json());
+
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -74,6 +77,81 @@ app.put("/users/:id/balance", (req, res) => {
 
     return res.status(200).json({ balance: req.body.balance });
   });
+});
+
+// ✅ GET PRODUCTS by store
+app.get("/products", (req, res) => {
+  const storeId = req.query.store_id;
+  if (!storeId)
+    return res.status(400).json({ message: "store_id is required" });
+
+  const q = "SELECT * FROM products WHERE store_id = ? ORDER BY id DESC";
+
+  db.query(q, [storeId], (err, data) => {
+    if (err) return res.status(500).json(err);
+    return res.status(200).json({ products: data });
+  });
+});
+
+// ✅ CREATE PRODUCT (base64 img supported)
+app.post("/products", (req, res) => {
+  const { name, price, type, img, store_id } = req.body;
+
+  if (!name || store_id == null)
+    return res.status(400).json({ message: "name and store_id are required" });
+
+  const q =
+    "INSERT INTO products (name, price, type, img, store_id) VALUES (?, ?, ?, ?, ?)";
+
+  db.query(
+    q,
+    [name, Number(price) || 0, type || "snacks", img || null, store_id],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+
+      return res.status(200).json({
+        product: {
+          id: result.insertId,
+          name,
+          price: Number(price) || 0,
+          type: type || "snacks",
+          img: img || null,
+          store_id,
+        },
+      });
+    }
+  );
+});
+
+// ✅ UPDATE PRODUCT (base64 img supported)
+app.put("/products/:id", (req, res) => {
+  const id = req.params.id;
+  const { name, price, type, img } = req.body;
+
+  if (!name) return res.status(400).json({ message: "name is required" });
+
+  const q =
+    "UPDATE products SET name = ?, price = ?, type = ?, img = ? WHERE id = ?";
+
+  db.query(
+    q,
+    [name, Number(price) || 0, type || "snacks", img || null, id],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      if (result.affectedRows === 0)
+        return res.status(404).json({ message: "Product not found" });
+
+      return res.status(200).json({
+        product: {
+          id: Number(id),
+          name,
+          price: Number(price) || 0,
+          type: type || "snacks",
+          img: img || null,
+        },
+      });
+    }
+  );
 });
 
 app.listen(5000, () => console.log("Server running on port 5000"));
