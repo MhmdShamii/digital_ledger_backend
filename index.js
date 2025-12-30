@@ -35,6 +35,39 @@ app.post("/signin", (req, res) => {
   });
 });
 
+app.post("/register", (req, res) => {
+  const { store_name, email, password } = req.body;
+
+  if (!store_name || !email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  const checkQ = "SELECT id FROM admins WHERE email = ?";
+  db.query(checkQ, [email], (err, data) => {
+    if (err) return res.status(500).json(err);
+
+    if (data.length > 0) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    const insertQ =
+      "INSERT INTO admins (store_name, email, password) VALUES (?, ?, ?)";
+
+    db.query(insertQ, [store_name, email, password], (err2, result) => {
+      if (err2) return res.status(500).json(err2);
+
+      return res.status(201).json({
+        message: "Account created successfully",
+        user: {
+          id: result.insertId,
+          store_name,
+          email,
+        },
+      });
+    });
+  });
+});
+
 // GET USERS by store
 app.get("/users", (req, res) => {
   const q = "SELECT * FROM users WHERE store_id = ? ORDER BY id DESC";
