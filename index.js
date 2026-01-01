@@ -68,6 +68,17 @@ app.post("/register", (req, res) => {
   });
 });
 
+app.delete("/users/:id", (req, res) => {
+  const q = "DELETE FROM users WHERE id = ?";
+  db.query(q, [req.params.id], (err, result) => {
+    if (err) return res.status(500).json(err);
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: "User not found" });
+
+    return res.status(200).json({ message: "User deleted" });
+  });
+});
+
 // GET USERS by store
 app.get("/users", (req, res) => {
   const q = "SELECT * FROM users WHERE store_id = ? ORDER BY id DESC";
