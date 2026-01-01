@@ -41,6 +41,7 @@ app.post("/signin", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
+  console.log("REGISTER BODY:", req.body);
   const { store_name, email, password } = req.body;
 
   if (!store_name || !email || !password) {
