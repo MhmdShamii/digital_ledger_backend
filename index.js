@@ -1,5 +1,5 @@
 const express = require("express");
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const cors = require("cors");
 require("dotenv").config();
 
@@ -7,7 +7,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "*", // or your frontend URL
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
